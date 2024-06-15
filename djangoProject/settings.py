@@ -27,7 +27,8 @@ DEBUG = True
 
 ALLOWED_HOSTS = ["*"]
 
-
+LOGIN_REDIRECT_URL = '/friends/profile/1/'  # 적절한 URL로 수정
+LOGOUT_REDIRECT_URL = '/'  # 로그아웃 후 리디렉션될 URL
 # Application definition
 
 INSTALLED_APPS = [

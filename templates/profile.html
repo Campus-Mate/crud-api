@@ -1,16 +1,109 @@
 <!-- templates/profile.html -->
 
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profile</title>
+    <style>
+        .friend-request, .friend-list {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+<h1>{{ user.username }}'s Profile</h1>
+
+<!-- 친구 요청 보내기 -->
 {% if user != request.user %}
-    <form action="{% url 'send_friend_request' user.id %}" method="post">
-        {% csrf_token %}
-        <button type="submit">Send Friend Request</button>
-    </form>
+    <div class="friend-request">
+        <button id="send-friend-request" data-user-id="{{ user.id }}">Send Friend Request</button>
+    </div>
 {% endif %}
 
-{% for request in user.received_requests.all %}
-    <p>{{ request.from_user }} wants to be your friend.</p>
-    <form action="{% url 'accept_friend_request' request.id %}" method="post">
-        {% csrf_token %}
-        <button type="submit">Accept</button>
-    </form>
-{% endfor %}
+<!-- 받은 친구 요청 목록 -->
+<h2>Friend Requests</h2>
+<div class="friend-requests">
+    {% if friend_requests %}
+        <ul>
+            {% for request in friend_requests %}
+                <li>
+                    {{ request.from_user.username }} wants to be your friend.
+                    <button class="accept-request" data-request-id="{{ request.id }}">Accept</button>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No friend requests.</p>
+    {% endif %}
+</div>
+
+<!-- 친구 목록 -->
+<h2>Friends List</h2>
+<div class="friend-list">
+    {% if user.profile.friends.all %}
+        <ul>
+            {% for friend in user.profile.friends.all %}
+                <li>{{ friend.user.username }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No friends yet.</p>
+    {% endif %}
+</div>
+
+<!-- 로그아웃 버튼 -->
+<form action="{% url 'logout' %}" method="post">
+    {% csrf_token %}
+    <button type="submit">Logout</button>
+</form>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // 친구 요청 보내기
+        const sendRequestButton = document.getElementById('send-friend-request');
+        if (sendRequestButton) {
+            sendRequestButton.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                fetch(`/friends/send_request/${userId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('Friend request sent!');
+                        } else {
+                            alert('Failed to send friend request.');
+                        }
+                    });
+            });
+        }
+
+        // 친구 요청 수락
+        const acceptRequestButtons = document.querySelectorAll('.accept-request');
+        acceptRequestButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const requestId = this.getAttribute('data-request-id');
+                fetch(`/friends/accept_request/${requestId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}',
+                        'Content-Type': 'application/json',
+                    }
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            alert('Friend request accepted!');
+                            location.reload();  // 페이지를 새로고침하여 변경 사항 반영
+                        } else {
+                            alert('Failed to accept friend request.');
+                        }
+                    });
+            });
+        });
+    });
+</script>
+</body>
+</html>

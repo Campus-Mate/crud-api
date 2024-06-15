@@ -18,13 +18,7 @@ def accept_friend_request(request, request_id):
     if friend_request.to_user == request.user:
         friend_request.accepted = True
         friend_request.save()
-        # Here you might want to add the users to each other's friend lists
-        # This example assumes a ManyToMany relationship in a User profile model
-        # from_user.profile.friends.add(to_user.profile)
-        # to_user.profile.friends.add(from_user.profile)
     return redirect('profile', user_id=friend_request.from_user.id)
-
-# friends/views.py
 
 @login_required
 def profile(request, user_id):
