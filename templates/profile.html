@@ -15,41 +15,47 @@
 
 <!-- 친구 요청 보내기 -->
 {% if user != request.user %}
-    <div class="friend-request">
-        <button id="send-friend-request" data-user-id="{{ user.id }}">Send Friend Request</button>
-    </div>
+    <form action="{% url 'send_friend_request' user.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Send Friend Request</button>
+    </form>
 {% endif %}
 
 <!-- 받은 친구 요청 목록 -->
 <h2>Friend Requests</h2>
-<div class="friend-requests">
-    {% if friend_requests %}
-        <ul>
-            {% for request in friend_requests %}
-                <li>
-                    {{ request.from_user.username }} wants to be your friend.
-                    <button class="accept-request" data-request-id="{{ request.id }}">Accept</button>
-                </li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No friend requests.</p>
-    {% endif %}
-</div>
+{% if friend_requests %}
+    <ul>
+        {% for request in friend_requests %}
+            <li>
+                {{ request.from_user.username }} wants to be your friend.
+                <form action="{% url 'accept_friend_request' request.id %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">Accept</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No friend requests.</p>
+{% endif %}
 
 <!-- 친구 목록 -->
 <h2>Friends List</h2>
-<div class="friend-list">
-    {% if user.profile.friends.all %}
-        <ul>
-            {% for friend in user.profile.friends.all %}
-                <li>{{ friend.user.username }}</li>
-            {% endfor %}
-        </ul>
-    {% else %}
-        <p>No friends yet.</p>
-    {% endif %}
-</div>
+{% if user.profile.friends.all %}
+    <ul>
+        {% for friend in user.profile.friends.all %}
+            <li>
+                {{ friend.user.username }}
+                <form action="{% url 'delete_friend' friend.user.id %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">Remove Friend</button>
+                </form>
+            </li>
+        {% endfor %}
+    </ul>
+{% else %}
+    <p>No friends yet.</p>
+{% endif %}
 
 <!-- 로그아웃 버튼 -->
 <form action="{% url 'logout' %}" method="post">
@@ -71,9 +77,12 @@
                         'Content-Type': 'application/json',
                     }
                 })
-                    .then(response => {
-                        if (response.ok) {
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'request_sent') {
                             alert('Friend request sent!');
+                        } else if (data.status === 'already_sent') {
+                            alert('Friend request already sent.');
                         } else {
                             alert('Failed to send friend request.');
                         }
@@ -93,8 +102,9 @@
                         'Content-Type': 'application/json',
                     }
                 })
-                    .then(response => {
-                        if (response.ok) {
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'request_accepted') {
                             alert('Friend request accepted!');
                             location.reload();  // 페이지를 새로고침하여 변경 사항 반영
                         } else {
