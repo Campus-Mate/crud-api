@@ -1,0 +1,16 @@
+<!-- templates/profile.html -->
+
+{% if user != request.user %}
+    <form action="{% url 'send_friend_request' user.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Send Friend Request</button>
+    </form>
+{% endif %}
+
+{% for request in user.received_requests.all %}
+    <p>{{ request.from_user }} wants to be your friend.</p>
+    <form action="{% url 'accept_friend_request' request.id %}" method="post">
+        {% csrf_token %}
+        <button type="submit">Accept</button>
+    </form>
+{% endfor %}
