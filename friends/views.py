@@ -19,14 +19,18 @@ def send_friend_request(request, user_id):
 
 @login_required
 def accept_friend_request(request, request_id):
-    if request.method == 'POST':
-        friend_request = get_object_or_404(FriendRequest, id=request_id)
-        if friend_request.to_user == request.user:
-            friend_request.accepted = True
-            friend_request.save()
-            request.user.profile.friends.add(friend_request.from_user.profile)
-            friend_request.from_user.profile.friends.add(request.user.profile)
-            return JsonResponse({'status': 'request_accepted'})
+    friend_request = get_object_or_404(FriendRequest, id=request_id)
+    if friend_request.to_user == request.user:
+        friend_request.accepted = True
+        friend_request.save()
+        # Ensure profiles exist
+        if not hasattr(request.user, 'profile'):
+            Profile.objects.create(user=request.user)
+        if not hasattr(friend_request.from_user, 'profile'):
+            Profile.objects.create(user=friend_request.from_user)
+        request.user.profile.friends.add(friend_request.from_user.profile)
+        friend_request.from_user.profile.friends.add(request.user.profile)
+        return redirect('profile', user_id=request.user.id)  # 리디렉션을 추가합니다.
     return JsonResponse({'status': 'bad_request'}, status=400)
 
 @login_required
